@@ -6,6 +6,8 @@ import { nanoid } from 'nanoid'
 import { ReadyStates } from '@/types/transport'
 import { PubSubImpl } from '@/utils/pubsub'
 
+const kPostTypes = ['message_sent', 'meta_event', 'notice', 'request', 'message']
+
 export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implements Connection {
   private _transport: Transport | undefined
   private _disposeTransportEvents: Dispose | undefined
@@ -268,6 +270,9 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
       this.emit(type as any, data, this)
     }
 
+    if (!kPostTypes.includes(data.post_type))
+      return
+
     emit('connection.event')
     let typeA = data.post_type
 
@@ -329,6 +334,12 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
         this._scheduleReconnect()
       })
     }, interval)
+  }
+
+  close() {
+    this._manualClose = true
+    this._disposeTransportEvents?.()
+    this._transport?.close()
   }
 }
 

@@ -37,6 +37,7 @@ export type ConnectionStreamResult<R = any> = [stream: ProtocolReadableStream, r
 export interface Connection extends ConnectionPubSub {
   readonly transport: Transport
   connect: () => Promise<void>
+  close: () => void
   request: (<const P, const R = any>(method: string, args: P, stream?: false) => Promise<R>)
     & (<const P, const R = any>(method: string, args: P, stream: true) => Promise<ConnectionStreamResult<R>>)
 }
