@@ -1,6 +1,6 @@
 import type { Dispose } from '@/types/common'
 import type { Connection, ConnectionEventHandlers, OpenConnectionOptions } from '@/types/connection'
-import type { ProtocolReply, ProtocolRequest } from '@/types/protocol'
+import type { ProtocolReadableStream, ProtocolReply, ProtocolReplyStream, ProtocolRequest } from '@/types/protocol'
 import type { Transport } from '@/types/transport'
 import { nanoid } from 'nanoid'
 import { ReadyStates } from '@/types/transport'
@@ -84,9 +84,10 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   private _manualClose = false
   private _isReconnecting = false
   private _callbacks = new Map<string, { resolve: (data: any) => void, reject: (err: any) => void, timer: NodeJS.Timeout }>()
+  private _streams = new Map<string, { enqueue: (data: any) => void, raise: (err: any) => void, complete: (value: any) => void, close: () => void }>()
 
   constructor(private readonly _options: OpenConnectionOptions) {
-    super()
+    super(err => this._handleEventError(err), ['connection.error'])
   }
 
   get transport(): Transport {
@@ -101,9 +102,13 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
     await this._connect()
   }
 
+  private _handleEventError(error: Error) {
+    this.emit('connection.error', error, this)
+  }
+
   private async _connect(reconnecting = false): Promise<void> {
     try {
-      const transportOrPromise = this._options.transport(this._options.token)
+      const transportOrPromise = this._options.transport(this._options.token ?? '')
       const transport = await transportOrPromise
       this._transport = transport
       if (reconnecting) {
@@ -117,34 +122,74 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
     }
   }
 
-  request<P, R = any>(method: string, args?: P): Promise<R> {
+  private _createStream(echo: string): [ReadableStream<string>, Promise<any>] {
+    const deferred = { resolve: null, reject: null } as any
+    const promise = new Promise<any>((res, rej) => {
+      deferred.resolve = res
+      deferred.reject = rej
+    })
+
+    return [new ReadableStream<string>({
+      start: (controller) => {
+        this._streams.set(echo, {
+          enqueue: data => controller.enqueue(data),
+          raise: (err) => {
+            deferred.reject?.(err)
+            controller.error(err)
+          },
+          complete: (value) => {
+            deferred.resolve?.(value)
+            controller.close()
+          },
+          close: () => controller.close(),
+        })
+      },
+      cancel: () => {
+        this._streams.delete(echo)
+        deferred.reject?.(new Error('Stream canceled'))
+      },
+    }), promise]
+  }
+
+  request<const P, const R = any>(method: string, args: P, stream?: false): Promise<R>
+  request<const P, const R = any>(method: string, args: P, stream: true): Promise<[ProtocolReadableStream, Promise<R>]>
+  request<P, R = any>(method: string, args?: P, stream?: boolean): Promise<R | [ProtocolReadableStream, Promise<R>]> {
     return new Promise<R>((resolve, reject) => {
       const echo = nanoid()
       const request: ProtocolRequest = {
         action: method,
         params: args,
         echo,
+        stream: stream ? 'stream-action' : 'normal-action',
       }
 
-      const timer = setTimeout(() => {
-        if (this._callbacks.has(echo)) {
-          this._callbacks.delete(echo)
-          const error = new Error(`API Request Timeout: ${method}`)
-          this.emit('connection.error', error, this)
-          reject(error)
-        }
-      }, this._options.timeout ?? 30000) // 30s timeout
+      if (stream) {
+        const readable = this._createStream(echo)
+        resolve(readable as any)
+      }
+      else {
+        const timer = setTimeout(() => {
+          if (this._callbacks.has(echo)) {
+            this._callbacks.delete(echo)
+            const error = new Error(`API Request Timeout: ${method}`)
+            this.emit('connection.error', error, this)
+            reject(error)
+          }
+        }, this._options.timeout ?? 30000) // 30s timeout
 
-      this._callbacks.set(echo, { resolve, reject, timer })
+        this._callbacks.set(echo, { resolve, reject, timer })
+      }
 
       try {
         this.emit('connection.request', request, this)
         this.transport.send(JSON.stringify(request))
       }
       catch (error) {
-        clearTimeout(timer)
-        this._callbacks.delete(echo)
-        reject(error)
+        if (!stream) {
+          clearTimeout((this._callbacks.get(echo) as any).timer)
+          this._callbacks.delete(echo)
+          reject(error)
+        }
       }
     })
   }
@@ -188,6 +233,13 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
 
       this.emit('connection.disconnected', transport, this)
       this._transport = undefined
+
+      // Clear all pending streams
+      for (const [_, { raise }] of this._streams) {
+        raise(new Error('Connection closed'))
+      }
+      this._streams.clear()
+
       // Clear all pending requests
       for (const [_, { reject, timer }] of this._callbacks) {
         clearTimeout(timer)
@@ -223,17 +275,41 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
 
     // Handle Reply
     if (data.echo) {
+      this.emit('connection.reply', data, this)
+      if (data.stream === 'stream-action') {
+        this.emit('connection.reply.stream', data, this)
+
+        const stream = this._streams.get(data.echo)
+        if (!stream)
+          return
+
+        const message = data as ProtocolReplyStream
+        if (message.status === 'ok') {
+          if (message.data!.type === 'stream' && message.data!.data_type === 'data_chunk') {
+            stream.enqueue(message)
+          }
+          else if (message.data!.type === 'response' && message.data!.data_type === 'data_complete') {
+            this._streams.delete(data.echo)
+            stream.complete(message)
+          }
+        }
+        else if (message.status === 'failed') {
+          this._streams.delete(data.echo)
+          stream.raise(new Error(`Stream Error: ${message.message || `code ${message.retcode}`}`))
+        }
+        return
+      }
+
       const pending = this._callbacks.get(data.echo)
       if (pending) {
         clearTimeout(pending.timer)
         this._callbacks.delete(data.echo)
-        this.emit('connection.reply', data as ProtocolReply, this)
 
-        if (data.status === 'ok' || data.retcode === 0) {
+        if (data.status === 'ok') {
           pending.resolve(data.data)
         }
         else {
-          pending.reject(new Error(data.message || `API Error: ${data.retcode}`))
+          pending.reject(new Error(`Request Error: ${data.message || `code ${data.retcode}`}`))
         }
         return
       }
@@ -293,10 +369,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
         }
       }
       else if (data.post_type === 'message_sent') {
-        emit('message.sent') // ProtocolEventNamePaths maps 'message.sent'
-        // Note: _reference.ts treats message_sent as post_type 'message_sent'.
-        // But ProtocolEventNamePaths has it under 'message.sent'.
-        // So we emit 'message.sent' here.
+        emit('message.sent')
       }
       else if (data.post_type === 'notice') {
         if (data.notice_type) {
@@ -326,7 +399,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
 
     if (attempts !== 'always' && this._reconnectAttempts >= attempts) {
       // Reconnect failed
-      return
+      return this.emit('connection.error', new Error('Reconnect failed'), this)
     }
 
     this._isReconnecting = true

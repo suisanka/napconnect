@@ -3,6 +3,10 @@ import type { PubSubOff } from '@/types/pubsub'
 export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>> implements PubSubOff<T> {
   private readonly listeners = new Map<keyof T, Set<(...args: any[]) => any>>()
 
+  constructor(private onerror?: (error: Error) => void, private _uncaughtEvents?: (keyof T)[]) {
+    this.onerror = onerror
+  }
+
   private _inner(type: keyof T, create?: boolean) {
     let listeners = this.listeners.get(type)
     if (!listeners) {
@@ -33,10 +37,11 @@ export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>>
 
   emit<const K extends keyof T>(type: K, ...args: T[K]) {
     const listeners = this._inner(type)
-    const promise = Promise.resolve()
+    const p = Promise.resolve()
     if (listeners) {
       for (const listener of listeners) {
-        promise.then(() => listener(...args))
+        p.then(() => listener(...args))
+          .catch(this._uncaughtEvents?.includes(type) ? null : this.onerror)
       }
     }
   }

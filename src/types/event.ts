@@ -5,7 +5,7 @@ export type ProtocolEventPostTypes = 'meta_event' | 'notice' | 'request' | 'mess
 export interface ProtocolEventCommon {
   time: number
   self_id: number
-  [x: string]: any
+  [x: string]: unknown
 }
 
 export interface ProtocolMetaEventCommon extends ProtocolEventCommon {
@@ -233,7 +233,7 @@ export type ProtocolRequestEvent
   = | ProtocolFriendRequestEvent
     | ProtocolGroupRequestEvent
 
-export interface ProtocolMessageEventCommon {
+export interface ProtocolMessageEventCommon extends ProtocolEventCommon {
   post_type: 'message'
   message_id: number
   message_type: 'private' | 'group'

@@ -4,11 +4,13 @@
     "jsx": "react-jsx",
     "lib": ["ESNext"],
     "moduleDetection": "force",
+    "baseUrl": ".",
     "module": "Preserve",
     "moduleResolution": "bundler",
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"],
+      "napconnect": ["src/index.ts"]
     },
     "allowImportingTsExtensions": true,
     "allowJs": true,

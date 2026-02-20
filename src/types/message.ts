@@ -343,11 +343,3 @@ export interface ProtocolMessageFlashTransferSegment {
     fileSetId: string
   }
 }
-
-// helper function to create a send segment
-export function segment<T extends ProtocolMessageSendSegment['type'], R extends Extract<ProtocolMessageSendSegment, { type: T }>>(
-  type: T,
-  data: R['data'],
-): R {
-  return { type, data } as R
-}

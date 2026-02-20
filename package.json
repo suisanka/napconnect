@@ -1,9 +1,22 @@
 {
   "name": "napconnect",
   "type": "module",
-  "module": "src/index.ts",
+  "version": "0.0.1",
+  "description": "A TypeScript library for NapCat",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "format": "eslint --fix ."
+    "format": "eslint --fix .",
+    "build": "tsdown"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -15,6 +28,11 @@
     "@antfu/eslint-config": "^7.4.3",
     "@types/bun": "latest",
     "eslint": "^10.0.0",
-    "jiti": "^2.6.1"
+    "jiti": "^2.6.1",
+    "tsdown": "^0.20.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com"
   }
 }

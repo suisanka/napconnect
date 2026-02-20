@@ -1,6 +1,6 @@
-import type { Connection } from '@/types'
+import type { Connection, ConnectionStreamResult } from '@/types'
 import type { ProtocolMessageSendSegment } from '@/types/message'
-import type { ProtocolReply } from '@/types/protocol'
+import type { ProtocolReply, ProtocolReplyStreamResponse } from '@/types/protocol'
 
 export interface ClientMethods {
   send_private_msg: (params: {
@@ -409,54 +409,6 @@ export interface ClientMethods {
   }) => Promise<ProtocolReply<{ url: string }>>
 
   clean_stream_temp_file: (params: Record<string, never>) => Promise<ProtocolReply<void>>
-
-  download_file_record_stream: (params: {
-    file: string
-    file_id?: string
-    chunk_size?: number
-    out_format?: string
-  }) => Promise<ProtocolReply<{ file: string }>>
-
-  download_file_image_stream: (params: {
-    file: string
-    file_id?: string
-    chunk_size?: number
-  }) => Promise<ProtocolReply<{ file: string }>>
-
-  test_download_stream: (params: {
-    error?: boolean
-  }) => Promise<ProtocolReply<{ success: boolean }>>
-
-  download_file_stream: (params: {
-    file: string
-    file_id?: string
-    chunk_size?: number
-  }) => Promise<ProtocolReply<{
-    type: string
-    data_type: string
-    file_name: string
-    file_size: number
-  }>>
-
-  upload_file_stream: (params: {
-    stream_id: string
-    chunk_data?: string
-    chunk_index?: number
-    total_chunks?: number
-    file_size?: number
-    expected_sha256?: string
-    is_complete?: boolean
-    filename?: string
-    reset?: boolean
-    verify_only?: boolean
-    file_retention?: number
-  }) => Promise<ProtocolReply<{
-    type: string
-    stream_id: string
-    status: string
-    received_chunks: number
-    total_chunks: number
-  }>>
 
   del_group_album_media: (params: {
     group_id: string | number
@@ -1079,12 +1031,72 @@ export interface ClientMethods {
     group_id?: number | string
     target_id?: number | string
   }) => Promise<ProtocolReply<void>>
+
+  upload_file_stream: (params: {
+    stream_id: string
+    chunk_data?: string
+    chunk_index?: number
+    total_chunks?: number
+    file_size?: number
+    expected_sha256?: string
+    is_complete?: boolean
+    filename?: string
+    reset?: boolean
+    verify_only?: boolean
+    file_retention?: number
+  }) => Promise<ProtocolReply<{
+    type: string
+    stream_id: string
+    status: string
+    received_chunks: number
+    total_chunks: number
+  }>>
 }
 
-export function invoke<const T extends keyof ClientMethods>(
+export interface ClientStreamMethods {
+  download_file_record_stream: (params: {
+    file: string
+    file_id?: string
+    chunk_size?: number
+    out_format?: string
+  }) => Promise<ConnectionStreamResult<ProtocolReplyStreamResponse<{ file: string }>>>
+
+  download_file_image_stream: (params: {
+    file: string
+    file_id?: string
+    chunk_size?: number
+  }) => Promise<ConnectionStreamResult<ProtocolReply<{ file: string }>>>
+
+  test_download_stream: (params: {
+    error?: boolean
+  }) => Promise<ConnectionStreamResult<ProtocolReply<{ success: boolean }>>>
+
+  download_file_stream: (params: {
+    file: string
+    file_id?: string
+    chunk_size?: number
+  }) => Promise<ConnectionStreamResult<ProtocolReply<{
+    type: string
+    data_type: string
+    file_name: string
+    file_size: number
+  }>>>
+}
+
+export function sendRequest<const T extends keyof ClientMethods>(
   conn: Connection,
   method: T,
   ...params: Parameters<ClientMethods[T]>
-): Promise<ClientMethods[T]> {
-  return conn.request(method, ...params)
+): ReturnType<ClientMethods[T]> {
+  return conn.request(method, params[0]) as any
 }
+
+export function sendRequestStream<const T extends keyof ClientStreamMethods>(
+  conn: Connection,
+  method: T,
+  ...params: Parameters<ClientStreamMethods[T]>
+): ReturnType<ClientStreamMethods[T]> {
+  return conn.request(method, params[0], true) as any
+}
+
+sendRequest.stream = sendRequestStream

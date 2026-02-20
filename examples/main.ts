@@ -1,9 +1,3 @@
-# NapConnect
-
-A TypeScript library for NapCat.
-
-## Example
-```typescript
 import { defineHandler, findMessageSegment, isSameNumericId, NumericSet, open, sendRequest, useGuardAsync } from 'napconnect'
 
 const groupAllowlist = NumericSet.fromSplit(import.meta.env.GROUP_ALLOWLIST || '')
@@ -68,4 +62,3 @@ const handleGroupMessage = defineHandler(
 connection.on('message.group', handleGroupMessage)
 
 await connection.connect()
-```
