@@ -31,7 +31,7 @@ export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>>
     }
     else {
       for (const fn of listeners) {
-        inner.add(fn.bind(this))
+        inner.add(fn)
       }
       return () => {
         this.off(type, ...listeners)
@@ -60,8 +60,8 @@ export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>>
 
   emit<const K extends keyof T>(type: K, ...args: T[K]) {
     const listeners = this._inner(type)
-    const p = Promise.resolve()
     if (listeners) {
+      const p = Promise.resolve()
       for (const listener of listeners) {
         p.then(() => listener(...args))
           .catch(this._uncaughtEvents?.includes(type) ? null : this.onerror)
