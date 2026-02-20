@@ -5,13 +5,13 @@ import type { PubSubOff } from '@/types/pubsub'
 import type { Transport } from '@/types/transport'
 
 export interface ConnectionBasicEventHandlers {
-  'connection.connected': (connection: Connection) => void
-  'connection.disconnected': (connection: Connection) => void
-  'connection.reconnect': (transport: Transport, connection: Connection) => void
-  'connection.request': (event: ProtocolRequest, connection: Connection) => void
-  'connection.reply': (event: ProtocolReply, connection: Connection) => void
-  'connection.event': (event: ProtocolEvent, connection: Connection) => void
-  'connection.error': (error: any, connection: Connection) => void
+  'connection.connected': [transport: Transport, connection: Connection]
+  'connection.disconnected': [transport: Transport, connection: Connection]
+  'connection.reconnect': [transport: Transport, connection: Connection]
+  'connection.request': [event: ProtocolRequest, connection: Connection]
+  'connection.reply': [event: ProtocolReply, connection: Connection]
+  'connection.event': [event: ProtocolEvent, connection: Connection]
+  'connection.error': [error: any, connection: Connection]
 }
 
 type _GetProtocolEventByName<K extends string, T extends Record<string | number, any>>
@@ -24,10 +24,10 @@ type _GetProtocolEventByName<K extends string, T extends Record<string | number,
       : never
 
 export type ProtocolEventHandlers = {
-  [T in ProtocolEventNames]: (event: _GetProtocolEventByName<T, ProtocolEventNamePaths>, connection: Connection) => void
+  [T in ProtocolEventNames]: [event: _GetProtocolEventByName<T, ProtocolEventNamePaths>, connection: Connection]
 }
 
-export type ConnectionEventHandlers = ConnectionBasicEventHandlers & ProtocolEventHandlers
+export type ConnectionEventHandlers = Omit<ConnectionBasicEventHandlers & ProtocolEventHandlers, never>
 
 export type ConnectionPubSub = PubSubOff<ConnectionEventHandlers>
 
@@ -37,13 +37,14 @@ export interface Connection extends ConnectionPubSub {
   request: <const P, const R = any>(method: string, args?: P) => Promise<R>
 }
 
-export interface CreateConnectionOptions {
-  transport: () => MaybePromiseLike<Transport>
+export interface OpenConnectionOptions {
+  transport: (token: string) => MaybePromiseLike<Transport>
   token: string
+  timeout?: number
   reconnect: false | {
     interval: number
     attempts: 'always' | number
   }
 }
 
-export type CreateConnection = (options: CreateConnectionOptions) => Connection
+export type OpenConnection = (options: OpenConnectionOptions) => Connection

@@ -1,3 +1,5 @@
+import type { ProtocolMessageEvent } from './event'
+
 export type ProtocolMessageSegment = ProtocolMessageRecvSegment | ProtocolMessageSendSegment
 
 export type ProtocolMessageRecvSegment // 接受的消息段
@@ -16,6 +18,11 @@ export type ProtocolMessageRecvSegment // 接受的消息段
     | ProtocolMessageMusicRecvSegment
     | ProtocolMessageForwardRecvSegment
     | ProtocolMessageMarkdownSegment
+    | ProtocolMessageMiniAppSegment
+    | ProtocolMessageLocationSegment
+    | ProtocolMessageXmlSegment
+    | ProtocolMessageOnlineFileSegment
+    | ProtocolMessageFlashTransferSegment
 
 export type ProtocolMessageSendSegment // 发送的消息段
   = | ProtocolMessageTextSegment
@@ -34,6 +41,11 @@ export type ProtocolMessageSendSegment // 发送的消息段
     | ProtocolMessageMusicSendSegment
     | ProtocolMessageContactSendSegment
     | ProtocolMessageMarkdownSegment
+    | ProtocolMessageMiniAppSegment
+    | ProtocolMessageLocationSegment
+    | ProtocolMessageXmlSegment
+    | ProtocolMessageOnlineFileSegment
+    | ProtocolMessageFlashTransferSegment
 
 // Text
 export interface ProtocolMessageTextSegment {
@@ -54,6 +66,7 @@ export interface ProtocolMessageAtSegment {
   type: 'at'
   data: {
     qq: string // @全体 = "all"
+    name?: string
   }
 }
 
@@ -263,7 +276,7 @@ export interface ProtocolMessageForwardRecvSegment {
   type: 'forward'
   data: {
     id: string
-    content?: ProtocolMessageNode[]
+    content?: ProtocolMessageEvent
   }
 }
 
@@ -286,6 +299,48 @@ export interface ProtocolMessageContentNode {
     nickname: string
     id?: string
     content: ProtocolMessageSegment[]
+  }
+}
+
+export interface ProtocolMessageMiniAppSegment {
+  type: 'miniapp'
+  data: {
+    data: string
+  }
+}
+
+export interface ProtocolMessageLocationSegment {
+  type: 'location'
+  data: {
+    lat: string | number
+    lon: string | number
+    title?: string
+    content?: string
+  }
+}
+
+export interface ProtocolMessageXmlSegment {
+  type: 'xml'
+  data: {
+    data: string
+  }
+}
+
+export interface ProtocolMessageOnlineFileSegment {
+  type: 'onlinefile'
+  data: {
+    msgId: string
+    elementId: string
+    fileName: string
+    fileSize: string
+    isDir: boolean
+  }
+}
+
+export interface ProtocolMessageFlashTransferSegment {
+  type: 'flashtransfer'
+  data: {
+    fileSetId: string
   }
 }
 

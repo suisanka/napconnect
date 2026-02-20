@@ -1,5 +1,3 @@
-import type { SubOff } from '@/types/pubsub'
-
 export interface TransportEventHandlers {
   message: (data: any) => void
   open: () => void
@@ -22,12 +20,7 @@ export interface TransportCommon {
   close: () => void
 }
 
-export interface SubTransport extends SubOff<TransportEventHandlers>, TransportCommon {
-  addEventListener: void
-  removeEventListener: void
-}
-
-export interface EventTargetTransport extends TransportCommon {
+export interface Transport extends TransportCommon {
   addEventListener: ((
     type: 'message',
     listener: (event: { data: any }) => void,
@@ -42,8 +35,4 @@ export interface EventTargetTransport extends TransportCommon {
     listener: () => void,
   ) => void)
   removeEventListener: (type: string, listener: (...args: any[]) => any) => void
-  on: void
-  off: void
 }
-
-export type Transport = SubTransport | EventTargetTransport

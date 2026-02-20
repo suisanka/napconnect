@@ -4,9 +4,19 @@ export interface ProtocolRequest<T = any> {
   echo?: string
 }
 
-export interface ProtocolReply<T = any> {
-  status: 'ok' | 'failed'
+export interface ProtocolReplyOk<T = any> {
+  status: 'ok'
   retcode: number
   data: T
   echo?: string
 }
+
+export interface ProtocolReplyFailed {
+  status: 'failed'
+  retcode: number
+  data?: null
+  message?: string
+  echo?: string
+}
+
+export type ProtocolReply<T = any> = ProtocolReplyOk<T> | ProtocolReplyFailed

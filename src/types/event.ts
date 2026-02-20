@@ -239,6 +239,8 @@ export interface ProtocolMessageEventCommon {
   message_type: 'private' | 'group'
   user_id: number
   message: string | ProtocolMessageRecvSegment[]
+  message_format: 'string' | 'array'
+  font: string
   raw_message: string
 }
 
@@ -253,6 +255,7 @@ export interface ProtocolMessagePrivateEvent extends ProtocolMessageEventCommon 
     nickname: string
     sex: 'male' | 'female' | 'unknown'
     age: number
+    area?: string
   }
 }
 
@@ -267,6 +270,9 @@ export interface ProtocolMessageGroupEvent extends ProtocolMessageEventCommon {
     role: 'owner' | 'admin' | 'member'
     title: string
     level: string
+    sex: 'male' | 'female' | 'unknown'
+    age: number
+    area: string
   }
 }
 

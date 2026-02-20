@@ -1,7 +1,7 @@
 import type { PubSubOff } from '@/types/pubsub'
 
-export class PubSubImpl<T extends Record<string, any> = Record<string, any>> implements PubSubOff<T> {
-  private readonly listeners = new Map<keyof T, Set<(...args: any) => any>>()
+export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>> implements PubSubOff<T> {
+  private readonly listeners = new Map<keyof T, Set<(...args: any[]) => any>>()
 
   private _inner(type: keyof T, create?: boolean) {
     let listeners = this.listeners.get(type)
@@ -15,11 +15,11 @@ export class PubSubImpl<T extends Record<string, any> = Record<string, any>> imp
     return listeners
   }
 
-  on(type: keyof T, listener: (...args: any[]) => any, once?: boolean) {
+  on<const K extends keyof T>(type: K, listener: (...args: T[K]) => void, once?: boolean) {
     const inner = this._inner(type, true)!
     const fn = once
-      ? (...args: any[]) => {
-          inner.delete(listener)
+      ? (...args: T[K]) => {
+          inner.delete(fn)
           listener.call(this, ...args)
         }
       : listener.bind(this)
@@ -31,7 +31,7 @@ export class PubSubImpl<T extends Record<string, any> = Record<string, any>> imp
     this._inner(type)?.delete(listener)
   }
 
-  emit(type: keyof T, ...args: any[]) {
+  emit<const K extends keyof T>(type: K, ...args: T[K]) {
     const listeners = this._inner(type)
     const promise = Promise.resolve()
     if (listeners) {
