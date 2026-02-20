@@ -6,7 +6,7 @@
   "description": "A TypeScript library for NapCat",
   "repository": {
     "type": "git",
-    "url": "https://github.com/suisanka/napconnect.git"
+    "url": "git+https://github.com/suisanka/napconnect.git"
   },
   "exports": {
     ".": {
@@ -22,8 +22,7 @@
   "scripts": {
     "format": "eslint --fix .",
     "build": "tsdown",
-    "bump": "bumpp",
-    "prepublish": "bun run build"
+    "bump": "bumpp"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
