@@ -116,7 +116,7 @@ export interface ProtocolNoticeNotifyGroupTitleEvent extends ProtocolNoticeGroup
   title: string
 }
 
-export type ProtocolNoticeGroupEssenceEventSubTypes = 'set' | 'unset'
+export type ProtocolNoticeGroupEssenceEventSubTypes = 'add' | 'delete'
 export interface ProtocolNoticeGroupEssenceEvent extends ProtocolNoticeGroupEventCommon {
   notice_type: 'essence'
   message_id: number
@@ -131,7 +131,7 @@ export interface ProtocolMessageEmojiLike {
 }
 
 export interface ProtocolNoticeGroupMessageEmojiLikeEvent extends ProtocolNoticeGroupEventCommon {
-  notice_type: 'group_message_emoji_like'
+  notice_type: 'group_msg_emoji_like'
   message_id: number
   likes: ProtocolMessageEmojiLike[]
 }
@@ -314,6 +314,11 @@ export interface ProtocolEventNamePaths {
   }
   notice: {
     _: ProtocolNoticeEvent
+    essence: {
+      _: ProtocolNoticeGroupEssenceEvent
+      add: ProtocolNoticeGroupEssenceEvent
+      delete: ProtocolNoticeGroupEssenceEvent
+    }
     group: {
       _: ProtocolNoticeGroupEvent
       recall: ProtocolNoticeGroupRecallEvent
@@ -327,21 +332,20 @@ export interface ProtocolEventNamePaths {
       ban: ProtocolNoticeGroupBanEvent
       upload: ProtocolNoticeGroupUploadEvent
       card: ProtocolNoticeGroupCardEvent
-      essence: {
-        _: ProtocolNoticeGroupEssenceEvent
-        add: ProtocolNoticeGroupEssenceEvent
-        delete: ProtocolNoticeGroupEssenceEvent
-      }
-      emojilike: ProtocolNoticeGroupMessageEmojiLikeEvent
+
+      reaction: ProtocolNoticeGroupMessageEmojiLikeEvent
     }
-    botoffline: ProtocolNoticeBotOfflineEvent
+    bot: {
+      _: ProtocolNoticeBotOfflineEvent
+      offline: ProtocolNoticeBotOfflineEvent
+    }
     notify: {
       _: ProtocolNoticeNotifyEvent
       name: ProtocolNoticeNotifyGroupNameEvent
       title: ProtocolNoticeNotifyGroupTitleEvent
       poke: ProtocolNoticeNotifyPokeEvent
-      profilelike: ProtocolNoticeNotifyProfileLikeEvent
-      inputstatus: ProtocolNoticeNotifyInputStatusEvent
+      profile_like: ProtocolNoticeNotifyProfileLikeEvent
+      input_status: ProtocolNoticeNotifyInputStatusEvent
     }
     friend: {
       _: ProtocolNoticeFriendEvent

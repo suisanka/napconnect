@@ -1,80 +1,10 @@
 import type { Dispose } from '@/types/common'
 import type { Connection, ConnectionEventHandlers, OpenConnectionOptions } from '@/types/connection'
-import type { ProtocolReadableStream, ProtocolReply, ProtocolReplyStream, ProtocolRequest } from '@/types/protocol'
+import type { ProtocolReadableStream, ProtocolReplyStream, ProtocolRequest } from '@/types/protocol'
 import type { Transport } from '@/types/transport'
 import { nanoid } from 'nanoid'
 import { ReadyStates } from '@/types/transport'
 import { PubSubImpl } from '@/utils/pubsub'
-
-const NAPCAT_NOTICE_NOTIFY_MAP: Record<string, { notice_type: string, sub_type: string }> = {
-  input_status: {
-    notice_type: 'friend',
-    sub_type: 'input',
-  },
-  profile_like: {
-    notice_type: 'friend',
-    sub_type: 'like',
-  },
-  title: {
-    notice_type: 'group',
-    sub_type: 'title',
-  },
-}
-
-const NAPCAT_NOTICE_EVENT_MAP: Record<string, { notice_type: string, sub_type: string }> = {
-  friend_add: {
-    notice_type: 'friend',
-    sub_type: 'increase',
-  },
-  friend_recall: {
-    notice_type: 'friend',
-    sub_type: 'recall',
-  },
-  offline_file: {
-    notice_type: 'friend',
-    sub_type: 'offline_file',
-  },
-  client_status: {
-    notice_type: 'client',
-    sub_type: 'status',
-  },
-  group_admin: {
-    notice_type: 'group',
-    sub_type: 'admin',
-  },
-  group_ban: {
-    notice_type: 'group',
-    sub_type: 'ban',
-  },
-  group_card: {
-    notice_type: 'group',
-    sub_type: 'card',
-  },
-  group_upload: {
-    notice_type: 'group',
-    sub_type: 'upload',
-  },
-  group_decrease: {
-    notice_type: 'group',
-    sub_type: 'decrease',
-  },
-  group_increase: {
-    notice_type: 'group',
-    sub_type: 'increase',
-  },
-  group_msg_emoji_like: {
-    notice_type: 'group',
-    sub_type: 'reaction',
-  },
-  essence: {
-    notice_type: 'group',
-    sub_type: 'essence',
-  },
-  group_recall: {
-    notice_type: 'group',
-    sub_type: 'recall',
-  },
-}
 
 export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implements Connection {
   private _transport: Transport | undefined
@@ -87,7 +17,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   private _streams = new Map<string, { enqueue: (data: any) => void, raise: (err: any) => void, complete: (value: any) => void, close: () => void }>()
 
   constructor(private readonly _options: OpenConnectionOptions) {
-    super(err => this._handleEventError(err), ['connection.error'])
+    super(err => this._handleError(err), ['connection.error'])
   }
 
   get transport(): Transport {
@@ -102,7 +32,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
     await this._connect()
   }
 
-  private _handleEventError(error: Error) {
+  private _handleError(error: any) {
     this.emit('connection.error', error, this)
   }
 
@@ -117,19 +47,19 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
       this._bindTransportEvents(transport)
     }
     catch (error) {
-      this.emit('connection.error', error, this)
+      this._handleError(error)
       throw error
     }
   }
 
-  private _createStream(echo: string): [ReadableStream<string>, Promise<any>] {
+  private _createStream(echo: string): [ReadableStream<any>, Promise<any>] {
     const deferred = { resolve: null, reject: null } as any
     const promise = new Promise<any>((res, rej) => {
       deferred.resolve = res
       deferred.reject = rej
     })
 
-    return [new ReadableStream<string>({
+    return [new ReadableStream<any>({
       start: (controller) => {
         this._streams.set(echo, {
           enqueue: data => controller.enqueue(data),
@@ -154,7 +84,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   request<const P, const R = any>(method: string, args: P, stream?: false): Promise<R>
   request<const P, const R = any>(method: string, args: P, stream: true): Promise<[ProtocolReadableStream, Promise<R>]>
   request<P, R = any>(method: string, args?: P, stream?: boolean): Promise<R | [ProtocolReadableStream, Promise<R>]> {
-    return new Promise<R>((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       const echo = nanoid()
       const request: ProtocolRequest = {
         action: method,
@@ -164,32 +94,41 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
       }
 
       if (stream) {
-        const readable = this._createStream(echo)
-        resolve(readable as any)
+        const result = this._createStream(echo)
+        try {
+          this.emit('connection.request', request, this)
+          this.transport.send(JSON.stringify(request))
+          resolve(result)
+        }
+        catch (error) {
+          this._streams.delete(echo)
+          this._handleError(error)
+          reject(error)
+        }
+        return
       }
-      else {
-        const timer = setTimeout(() => {
-          if (this._callbacks.has(echo)) {
-            this._callbacks.delete(echo)
-            const error = new Error(`API Request Timeout: ${method}`)
-            this.emit('connection.error', error, this)
-            reject(error)
-          }
-        }, this._options.timeout ?? 30000) // 30s timeout
 
-        this._callbacks.set(echo, { resolve, reject, timer })
-      }
+      const timer = setTimeout(() => {
+        if (this._callbacks.has(echo)) {
+          this._callbacks.delete(echo)
+          const error = new Error(`API Request Timeout: ${method}`)
+
+          this._handleError(error)
+          reject(error)
+        }
+      }, this._options.timeout ?? 30000) // 30s timeout
+
+      this._callbacks.set(echo, { resolve, reject, timer })
 
       try {
         this.emit('connection.request', request, this)
         this.transport.send(JSON.stringify(request))
       }
       catch (error) {
-        if (!stream) {
-          clearTimeout((this._callbacks.get(echo) as any).timer)
-          this._callbacks.delete(echo)
-          reject(error)
-        }
+        clearTimeout(timer)
+        this._callbacks.delete(echo)
+        this._handleError(error)
+        reject(error)
       }
     })
   }
@@ -290,7 +229,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
           }
           else if (message.data!.type === 'response' && message.data!.data_type === 'data_complete') {
             this._streams.delete(data.echo)
-            stream.complete(message)
+            stream.complete(message.data!.data)
           }
         }
         else if (message.status === 'failed') {
@@ -317,25 +256,6 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
 
     // Handle Event
     if (data.post_type) {
-      // Apply NapCat mapping logic
-      if (data.post_type === 'notice') {
-        const isNotify = data.notice_type === 'notify'
-        const isPoke = data.sub_type === 'poke'
-        const isGroup = !!data.group_id
-
-        const { notice_type, sub_type } = isNotify
-          ? isPoke
-            ? { notice_type: isGroup ? 'group' : 'friend', sub_type: 'poke' }
-            : NAPCAT_NOTICE_NOTIFY_MAP[data.sub_type] || {}
-          : NAPCAT_NOTICE_EVENT_MAP[data.notice_type] || {}
-
-        if (notice_type)
-          data.notice_type = notice_type
-        if (sub_type)
-          data.sub_type = sub_type
-      }
-
-      this.emit('connection.event', data, this)
       this._dispatchProtocolEvents(data)
     }
   }
@@ -343,50 +263,46 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   private _dispatchProtocolEvents(data: any) {
     // Emit hierarchical events
     // e.g. notice -> notice.group -> notice.group.increase
-
     // Helper to emit safely
     const emit = (type: string) => {
       this.emit(type as any, data, this)
     }
 
-    if (data.post_type) {
-      emit(data.post_type) // e.g. 'notice'
+    emit('connection.event')
+    let typeA = data.post_type
 
-      if (data.post_type === 'meta_event') {
-        if (data.meta_event_type) {
-          emit(`meta.${data.meta_event_type}`) // e.g. 'meta.heartbeat'
-          if (data.sub_type) {
-            emit(`meta.${data.meta_event_type}.${data.sub_type}`)
-          }
-        }
-      }
-      else if (data.post_type === 'message') {
-        if (data.message_type) {
-          emit(`message.${data.message_type}`) // e.g. 'message.private'
-          if (data.sub_type) {
-            emit(`message.${data.message_type}.${data.sub_type}`)
-          }
-        }
-      }
-      else if (data.post_type === 'message_sent') {
-        emit('message.sent')
-      }
-      else if (data.post_type === 'notice') {
-        if (data.notice_type) {
-          emit(`notice.${data.notice_type}`) // e.g. 'notice.group'
-          if (data.sub_type) {
-            emit(`notice.${data.notice_type}.${data.sub_type}`) // e.g. 'notice.group.increase'
-          }
-        }
-      }
-      else if (data.post_type === 'request') {
-        if (data.request_type) {
-          emit(`request.${data.request_type}`) // e.g. 'request.friend'
-          if (data.sub_type) {
-            emit(`request.${data.request_type}.${data.sub_type}`)
-          }
-        }
-      }
+    if (typeA === 'message_sent') {
+      emit('message.sent')
+      return
+    }
+
+    const originalTypeA = typeA
+    if (typeA === 'meta_event') {
+      typeA = 'meta'
+    }
+    emit(typeA)
+
+    const typeB = data[`${originalTypeA}_type`]
+    let parts: string[] = []
+
+    if (typeB === 'group_msg_emoji_like') {
+      parts = ['group', 'reaction']
+    }
+    else if (typeB && typeB.includes('_')) {
+      parts = typeB.split('_')
+    }
+    else if (typeB) {
+      parts = [typeB]
+    }
+
+    let currentPath = typeA
+    for (const part of parts) {
+      currentPath += `.${part}`
+      emit(currentPath)
+    }
+
+    if (data.sub_type) {
+      emit(`${currentPath}.${data.sub_type}`)
     }
   }
 

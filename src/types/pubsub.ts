@@ -1,13 +1,14 @@
+import type { Dispose } from '@/types/common'
+
 export interface SubHalf<T extends Record<string, any[]>> {
   // eslint-disable-next-line ts/method-signature-style
   on<const K extends keyof T>(
     type: K,
-    listener: (...args: T[K]) => void,
-    once?: boolean,
-  ): void
+    ...listeners: Array<(...args: T[K]) => void>
+  ): Dispose
 }
 export interface OffHalf<T extends Record<string, any> = Record<string, any>> {
-  off: (type: keyof T, listener: (...args: any[]) => any) => void
+  off: (type: keyof T, ...listeners: Array<(...args: any[]) => any>) => void
 }
 
 export interface PubHalf<T extends Record<string, any> = Record<string, any>> {

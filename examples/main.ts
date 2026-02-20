@@ -1,4 +1,13 @@
-import { defineHandler, findMessageSegment, isSameNumericId, NumericSet, open, sendRequest, useGuardAsync } from 'napconnect'
+import {
+  defineHandler,
+  findMessageSegment,
+  isSameNumericId,
+  NumericSet,
+  open,
+  sendRequest,
+  sendRequestStream,
+  useGuardAsync,
+} from 'napconnect'
 
 const groupAllowlist = NumericSet.fromSplit(import.meta.env.GROUP_ALLOWLIST || '')
 
@@ -42,7 +51,8 @@ const handleGroupMessage = defineHandler(
         message: 'Hello from napconnect',
       })
 
-      const [stream, res] = await sendRequest.stream(connection, 'test_download_stream', {})
+      const [stream, res] = await sendRequestStream(connection, 'test_download_stream', {})
+
       console.log('Stream start', stream, res)
 
       for await (const reply of stream) {

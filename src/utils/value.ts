@@ -59,3 +59,6 @@ export class NumericSet implements Iterable<string> {
     return str ? new NumericSet(str.trim().split(sep)) : new NumericSet()
   }
 }
+
+// eslint-disable-next-line antfu/top-level-function
+export const noop = () => { /* noop */ }
