@@ -45,7 +45,7 @@ const handleGroupMessage = defineHandler(
     async (message) => {
       await sendRequest(connection, '_mark_all_as_read')
 
-      await sendRequest(connection, 'send_group_msg', {
+      await sendRequest(connection, 'send_msg', {
         auto_escape: true,
         group_id: message.group_id,
         message: 'Hello from napconnect',
