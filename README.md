@@ -1,6 +1,6 @@
 # NapConnect
 
-A TypeScript library for NapCat.
+A TypeScript library for [NapCat](https://github.com/NapNeko/NapCatQQ).
 
 ## Example
 ```typescript
