@@ -1,6 +1,6 @@
 import type { Connection, ConnectionStreamResult } from '@/types'
 import type { ProtocolMessageSendSegment } from '@/types/message'
-import type { ProtocolReply, ProtocolReplyOk, ProtocolReplyStreamResponse, ProtocolStreamCompleteMessage } from '@/types/protocol'
+import type { ProtocolReplyOk } from '@/types/protocol'
 
 export interface ClientMethods {
   send_private_msg: (params: {
