@@ -7,6 +7,7 @@ import {
   sendRequest,
   sendRequestStream,
   useGuardAsync,
+  type SendRequestStreamResult,
 } from 'napconnect'
 
 const groupAllowlist = NumericSet.fromSplit(import.meta.env.GROUP_ALLOWLIST || '')
@@ -51,7 +52,7 @@ const handleGroupMessage = defineHandler(
         message: 'Hello from napconnect',
       })
 
-      const [stream, res] = await sendRequestStream(connection, 'test_download_stream', {})
+      const [stream, res]: SendRequestStreamResult<'test_download_stream'> = await sendRequestStream(connection, 'test_download_stream', {})
 
       console.log('Stream start', stream, res)
 

@@ -1099,4 +1099,5 @@ export function sendRequestStream<const T extends keyof ClientStreamMethods>(
   return conn.request(method, params[0], true) as any
 }
 
-sendRequest.stream = sendRequestStream
+export type SendRequestResult<T extends keyof ClientMethods> = Awaited<ReturnType<ClientMethods[T]>>
+export type SendRequestStreamResult<T extends keyof ClientStreamMethods> = Awaited<ReturnType<ClientStreamMethods[T]>>
