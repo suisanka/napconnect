@@ -33,7 +33,7 @@ export type ProtocolReplyStream<T = any>
 export type ProtocolReplyStreamResponse<T = any>
   = ProtocolReplyOk<ProtocolStreamCompleteMessage<T>>
 
-export type ProtocolReadableStream = ReadableStream<ProtocolReplyOk<ProtocolStreamDataMessage>>
+export type ProtocolReadableStream = ReadableStream<ProtocolStreamDataMessage>
 
 export interface ProtocolReplyOk<T = any> {
   status: 'ok'

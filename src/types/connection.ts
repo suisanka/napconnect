@@ -1,6 +1,6 @@
 import type { MaybePromiseLike } from '@/types/common'
 import type { ProtocolEvent, ProtocolEventNamePaths, ProtocolEventNames } from '@/types/event'
-import type { ProtocolReadableStream, ProtocolReply, ProtocolRequest } from '@/types/protocol'
+import type { ProtocolReadableStream, ProtocolReply, ProtocolRequest, ProtocolStreamCompleteMessage } from '@/types/protocol'
 import type { PubSubOff } from '@/types/pubsub'
 import type { Transport } from '@/types/transport'
 
@@ -32,7 +32,7 @@ export type ConnectionEventHandlers = Omit<ConnectionBasicEventHandlers & Protoc
 
 export type ConnectionPubSub = PubSubOff<ConnectionEventHandlers>
 
-export type ConnectionStreamResult<R = any> = [stream: ProtocolReadableStream, result: Promise<R>]
+export type ConnectionStreamResult<R = any> = [stream: ProtocolReadableStream, result: Promise<ProtocolStreamCompleteMessage<R>>]
 
 export interface Connection extends ConnectionPubSub {
   readonly transport: Transport

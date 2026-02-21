@@ -1,9 +1,8 @@
 import type { Dispose } from '@/types/common'
 import type { Connection, ConnectionEventHandlers, OpenConnectionOptions } from '@/types/connection'
-import type { ProtocolReadableStream, ProtocolReplyStream, ProtocolRequest } from '@/types/protocol'
+import type { ProtocolReadableStream, ProtocolReplyStream, ProtocolRequest, ProtocolStreamCompleteMessage } from '@/types/protocol'
 import type { Transport } from '@/types/transport'
 import { nanoid } from 'nanoid'
-import { ReadyStates } from '@/types/transport'
 import { PubSubImpl } from '@/utils/pubsub'
 
 const kPostTypes = ['message_sent', 'meta_event', 'notice', 'request', 'message']
@@ -83,9 +82,9 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
     }), promise]
   }
 
-  request<const P, const R = any>(method: string, args: P, stream?: false): Promise<R>
-  request<const P, const R = any>(method: string, args: P, stream: true): Promise<[ProtocolReadableStream, Promise<R>]>
-  request<P, R = any>(method: string, args?: P, stream?: boolean): Promise<R | [ProtocolReadableStream, Promise<R>]> {
+  request<const P, R = any>(method: string, args: P, stream?: false): Promise<R>
+  request<const P, R = any>(method: string, args: P, stream: true): Promise<[ProtocolReadableStream, Promise<ProtocolStreamCompleteMessage<R>>]>
+  request<P, R = any>(method: string, args?: P, stream?: boolean): Promise<R> | Promise<[ProtocolReadableStream, Promise<ProtocolStreamCompleteMessage<R>>]> {
     return new Promise<any>((resolve, reject) => {
       const echo = nanoid()
       const request: ProtocolRequest = {
@@ -198,7 +197,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
     transport.addEventListener('error', onError)
     transport.addEventListener('close', onClose)
 
-    if (transport.readyState === ReadyStates.OPEN) {
+    if (transport.readyState === 1 /* OPEN */) {
       onOpen()
     }
 
@@ -227,11 +226,11 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
         const message = data as ProtocolReplyStream
         if (message.status === 'ok') {
           if (message.data!.type === 'stream' && message.data!.data_type === 'data_chunk') {
-            stream.enqueue(message)
+            stream.enqueue(message.data!)
           }
           else if (message.data!.type === 'response' && message.data!.data_type === 'data_complete') {
             this._streams.delete(data.echo)
-            stream.complete(message.data!.data)
+            stream.complete(message.data!)
           }
         }
         else if (message.status === 'failed') {

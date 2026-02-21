@@ -5,14 +5,11 @@ export interface TransportEventHandlers {
   close: () => void
 }
 
-export type ReadyState = (typeof ReadyStates)[keyof typeof ReadyStates]
-
-export const ReadyStates = {
-  PENDING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-} as const
+export type ReadyState
+  = | 0 /* PENDING */
+    | 1 /* OPEN */
+    | 2 /* CLOSING */
+    | 3 /* CLOSED */
 
 export interface TransportCommon {
   readonly readyState: ReadyState
