@@ -13,11 +13,10 @@ using connection = open(
 connection.on(
   'protocol.event',
   matchEvent('message.group', async (message) => {
-    if (!hasMention(message)) {
+    if (!hasMention(message))
       return
-    }
 
-    respond(connection, message, `Hello, ${message.sender.nickname}!`)
+    await respond(connection, message, `Hello, ${message.sender.nickname}!`)
   }),
 )
 
