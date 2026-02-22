@@ -1,12 +1,13 @@
+import { open } from 'napconnect'
 import {
-
-  open,
-
-} from 'napconnect'
-
-import { defineHandler, findMessageSegment, isSameNumericId, NumericSet, sendRequest, sendRequestStream, useGuardAsync } from 'napconnect/utils'
-
-const groupAllowlist = NumericSet.fromSplit(import.meta.env.GROUP_ALLOWLIST || '')
+  defineHandler,
+  findMessageSegment,
+  isSameNumericId,
+  matchEvent,
+  NumericSet,
+  sendRequest,
+  sendRequestStream,
+} from 'napconnect/utils'
 
 const connection = open({
   transport: token => new WebSocket(`${import.meta.env.NAPCAT_ENDPOINT}/?access_token=${token}`),
@@ -29,43 +30,45 @@ connection.on('connection.event', (event) => {
   console.log('Event', event)
 })
 
+const allowlist = NumericSet.split(import.meta.env.GROUP_ALLOWLIST)
+
 const handleGroupMessage = defineHandler(
   'message.group',
-  useGuardAsync(
-    [
-      message => groupAllowlist.has(message.group_id),
-      (message) => {
-        const segment = findMessageSegment('at', message.message)
-        return segment && isSameNumericId(segment.data.qq, message.self_id)
-      },
-    ],
-    async (message) => {
-      await sendRequest(connection, '_mark_all_as_read')
+  async (message) => {
+    if (!allowlist.has(message.group_id)) {
+      return
+    }
 
-      await sendRequest(connection, 'send_msg', {
+    const segment = findMessageSegment('at', message.message)
+    if (!segment || !isSameNumericId(segment.data.qq, message.self_id)) {
+      return
+    }
+
+    await sendRequest(connection, 'send_msg', {
+      auto_escape: true,
+      group_id: message.group_id,
+      message: 'Hello from napconnect',
+    })
+
+    const [stream, res] = await sendRequestStream(connection, 'test_download_stream', {})
+
+    console.log('Stream start:', stream, res)
+
+    for await (const reply of stream) {
+      await sendRequest(connection, 'send_group_msg', {
         auto_escape: true,
         group_id: message.group_id,
-        message: 'Hello from napconnect',
+        message: `Stream data: ${reply.data}`,
       })
+    }
 
-      const [stream, res] = await sendRequestStream(connection, 'test_download_stream', {})
-
-      console.log('Stream start', stream, res)
-
-      for await (const reply of stream) {
-        console.log('Stream reply', reply)
-        await sendRequest(connection, 'send_group_msg', {
-          auto_escape: true,
-          group_id: message.group_id,
-          message: `Stream data: ${reply.data}`,
-        })
-      }
-
-      console.log('Stream response', await res)
-    },
-  ),
+    console.log('Stream end:', await res)
+  },
 )
 
-connection.on('message.group', handleGroupMessage)
+connection.on(
+  'connection.event',
+  matchEvent('message.group', handleGroupMessage),
+)
 
 await connection.connect()

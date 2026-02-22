@@ -1,3 +1,4 @@
+import type { Connection } from '@/types/connection'
 import type { ProtocolMessageRecvSegment } from '@/types/message'
 
 export type ProtocolEventPostTypes = 'meta_event' | 'notice' | 'request' | 'message' | 'message_sent'
@@ -5,6 +6,8 @@ export type ProtocolEventPostTypes = 'meta_event' | 'notice' | 'request' | 'mess
 export interface ProtocolEventCommon {
   time: number
   self_id: number
+  post_type?: string
+  sub_type?: string
   [x: string]: unknown
 }
 
@@ -188,6 +191,7 @@ export type ProtocolNoticeNotifyEvent
     | ProtocolNoticeNotifyGroupTitleEvent
     | ProtocolNoticeNotifyProfileLikeEvent
     | ProtocolNoticeNotifyInputStatusEvent
+    | ProtocolNoticeNotifyPokeEvent
 
 export type ProtocolNoticeGroupEvent
   = | ProtocolNoticeGroupIncreaseEvent
@@ -314,11 +318,6 @@ export interface ProtocolEventNamePaths {
   }
   notice: {
     _: ProtocolNoticeEvent
-    essence: {
-      _: ProtocolNoticeGroupEssenceEvent
-      add: ProtocolNoticeGroupEssenceEvent
-      delete: ProtocolNoticeGroupEssenceEvent
-    }
     group: {
       _: ProtocolNoticeGroupEvent
       recall: ProtocolNoticeGroupRecallEvent
@@ -332,7 +331,11 @@ export interface ProtocolEventNamePaths {
       ban: ProtocolNoticeGroupBanEvent
       upload: ProtocolNoticeGroupUploadEvent
       card: ProtocolNoticeGroupCardEvent
-
+      essence: {
+        _: ProtocolNoticeGroupEssenceEvent
+        add: ProtocolNoticeGroupEssenceEvent
+        delete: ProtocolNoticeGroupEssenceEvent
+      }
       reaction: ProtocolNoticeGroupMessageEmojiLikeEvent
     }
     bot: {
@@ -341,8 +344,8 @@ export interface ProtocolEventNamePaths {
     }
     notify: {
       _: ProtocolNoticeNotifyEvent
-      name: ProtocolNoticeNotifyGroupNameEvent
-      title: ProtocolNoticeNotifyGroupTitleEvent
+      group_name: ProtocolNoticeNotifyGroupNameEvent
+      group_title: ProtocolNoticeNotifyGroupTitleEvent
       poke: ProtocolNoticeNotifyPokeEvent
       profile_like: ProtocolNoticeNotifyProfileLikeEvent
       input_status: ProtocolNoticeNotifyInputStatusEvent
@@ -369,6 +372,19 @@ export interface ProtocolEventNamePaths {
     group: ProtocolMessageGroupEvent
     sent: ProtocolMessageSentEvent
   }
+}
+
+type _GetProtocolEventByName<K extends string, T extends Record<string | number, any>>
+  = K extends `${infer O}.${infer R}`
+    ? _GetProtocolEventByName<R, T[O]>
+    : K extends keyof T
+      ? T[K] extends Record<'_', any>
+        ? T[K]['_']
+        : T[K]
+      : never
+
+export type ProtocolEventHandlers = {
+  [T in ProtocolEventNames]: [event: _GetProtocolEventByName<T, ProtocolEventNamePaths>, connection: Connection]
 }
 
 export type ProtocolEventNames = _GenerateProtocolEventNames<ProtocolEventNamePaths>

@@ -1087,7 +1087,17 @@ export function sendRequest<const T extends keyof ClientMethods>(
   conn: Connection,
   method: T,
   ...params: Parameters<ClientMethods[T]>
-): ReturnType<ClientMethods[T]> {
+): ReturnType<ClientMethods[T]>
+export function sendRequest(
+  conn: Connection,
+  method: string,
+  ...params: any[]
+): Promise<ProtocolReplyOk<any>>
+export function sendRequest(
+  conn: Connection,
+  method: string,
+  ...params: any[]
+): Promise<ProtocolReplyOk<any>> {
   return conn.request(method, params[0]) as any
 }
 
@@ -1095,7 +1105,17 @@ export function sendRequestStream<const T extends keyof ClientStreamMethods>(
   conn: Connection,
   method: T,
   ...params: Parameters<ClientStreamMethods[T]>
-): ReturnType<ClientStreamMethods[T]> {
+): ReturnType<ClientStreamMethods[T]>
+export function sendRequestStream(
+  conn: Connection,
+  method: string,
+  ...params: any[]
+): Promise<ConnectionStreamResult<any>>
+export function sendRequestStream(
+  conn: Connection,
+  method: string,
+  ...params: any[]
+): Promise<ConnectionStreamResult<any>> {
   return conn.request(method, params[0], true) as any
 }
 

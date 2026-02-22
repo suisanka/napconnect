@@ -5,8 +5,6 @@ import type { Transport } from '@/types/transport'
 import { nanoid } from 'nanoid'
 import { PubSubImpl } from '@/utils/pubsub'
 
-const kPostTypes = ['message_sent', 'meta_event', 'notice', 'request', 'message']
-
 export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implements Connection {
   private _transport: Transport | undefined
   private _disposeTransportEvents: Dispose | undefined
@@ -257,56 +255,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
 
     // Handle Event
     if (data.post_type) {
-      this._dispatchProtocolEvents(data)
-    }
-  }
-
-  private _dispatchProtocolEvents(data: any) {
-    // Emit hierarchical events
-    // e.g. notice -> notice.group -> notice.group.increase
-    // Helper to emit safely
-    const emit = (type: string) => {
-      this.emit(type as any, data, this)
-    }
-
-    if (!kPostTypes.includes(data.post_type))
-      return
-
-    emit('connection.event')
-    let typeA = data.post_type
-
-    if (typeA === 'message_sent') {
-      emit('message.sent')
-      return
-    }
-
-    const originalTypeA = typeA
-    if (typeA === 'meta_event') {
-      typeA = 'meta'
-    }
-    emit(typeA)
-
-    const typeB = data[`${originalTypeA}_type`]
-    let parts: string[] = []
-
-    if (typeB === 'group_msg_emoji_like') {
-      parts = ['group', 'reaction']
-    }
-    else if (typeB && typeB.includes('_')) {
-      parts = typeB.split('_')
-    }
-    else if (typeB) {
-      parts = [typeB]
-    }
-
-    let currentPath = typeA
-    for (const part of parts) {
-      currentPath += `.${part}`
-      emit(currentPath)
-    }
-
-    if (data.sub_type) {
-      emit(`${currentPath}.${data.sub_type}`)
+      this.emit('connection.event', data, this)
     }
   }
 

@@ -55,7 +55,7 @@ export class NumericSet implements Iterable<string> {
     return Object.keys(this._record).values()
   }
 
-  static fromSplit(str?: string, sep = ',') {
+  static split(str?: string, sep = ',') {
     return str ? new NumericSet(str.trim().split(sep)) : new NumericSet()
   }
 }
