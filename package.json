@@ -27,6 +27,10 @@
     "./utils": {
       "types": "./dist/utils/index.d.mts",
       "import": "./dist/utils/index.mjs"
+    },
+    "./utils/builder": {
+      "types": "./dist/utils/builder.d.mts",
+      "import": "./dist/utils/builder.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -44,7 +48,8 @@
     "bump": "bumpp"
   },
   "peerDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.4.3",

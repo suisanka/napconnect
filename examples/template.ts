@@ -7,8 +7,10 @@ import {
   matchEvent,
   NumericSet,
   sendRequest,
-  sendRequestStream,
+  t,
+  template,
 } from 'napcon/utils'
+import z from 'zod'
 
 const allowlist = NumericSet.split(import.meta.env.GROUP_ALLOWLIST)
 
@@ -23,6 +25,13 @@ const connection = open({
   },
 })
 
+const hello = template({
+  props: z.object({
+    name: z.string(),
+  }),
+  build: props => t.text(`Hello, ${props.name}!`),
+})
+
 const handleGroupMessage = defineHandler(
   'message.group',
   async (message) => {
@@ -30,35 +39,20 @@ const handleGroupMessage = defineHandler(
       return
     }
 
-    const segment = findMessageSegment('at', message.message)
-    if (
-      segment == null || !isSameNumericId(segment.data.qq, message.self_id)
-    ) {
+    const segment = findMessageSegment(
+      'at',
+      message.message,
+      segment => isSameNumericId(segment.data.qq, message.self_id),
+    )
+    if (segment == null) {
       return
     }
 
     await sendRequest(connection, 'send_msg', {
       auto_escape: true,
       group_id: message.group_id,
-      message: 'Hello from napconnect',
+      message: hello({ name: message.sender.nickname }),
     })
-
-    const [stream, res] = await sendRequestStream(
-      connection,
-      'test_download_stream',
-    )
-
-    console.log('Stream start:', stream, res)
-
-    for await (const reply of stream) {
-      await sendRequest(connection, 'send_group_msg', {
-        auto_escape: true,
-        group_id: message.group_id,
-        message: `Stream data: ${reply.data}`,
-      })
-    }
-
-    console.log('Stream end:', await res)
   },
 )
 

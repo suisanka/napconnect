@@ -1,10 +1,10 @@
 import type { Dispose } from '@/types/common'
-import type { Connection, ConnectionEventHandlers, OpenConnectionOptions } from '@/types/connection'
+import type { Connection, ConnectionBasicPubSubHandlers, OpenConnection, OpenConnectionOptions, TransportFactory } from '@/types/connection'
 import type { ProtocolReadableStream, ProtocolReplyStream, ProtocolRequest, ProtocolStreamCompleteMessage } from '@/types/protocol'
 import type { Transport } from '@/types/transport'
 import { PubSubImpl } from '@/utils/pubsub'
 
-export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implements Connection {
+export class ConnectionImpl extends PubSubImpl<ConnectionBasicPubSubHandlers> implements Connection {
   private _transport: Transport | undefined
   private _disposeTransportEvents: Dispose | undefined
   private _reconnectAttempts = 0
@@ -114,7 +114,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
           this._handleError(error)
           reject(error)
         }
-      }, this._options.timeout ?? 30000) // 30s timeout
+      }, this._options.timeout)
 
       this._callbacks.set(echo, { resolve, reject, timer })
 
@@ -290,7 +290,18 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   }
 }
 
-export function open(options: OpenConnectionOptions): Connection {
+export const open: OpenConnection = function open(options: OpenConnectionOptions | TransportFactory, token?: string): Connection {
+  if (typeof options === 'function') {
+    options = { transport: options, token }
+  }
+
+  options.reconnect ??= {
+    interval: 15000,
+    attempts: 5,
+  }
+
+  options.timeout ??= 30000
+
   const conn = new ConnectionImpl(options)
   return conn
 }

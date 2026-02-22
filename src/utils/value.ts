@@ -1,4 +1,6 @@
-export function isSameNumericId(id1: string | number, id2: string | number) {
+import type { Numeric } from '@/types/common'
+
+export function isSameNumericId(id1: Numeric, id2: Numeric) {
   return Object.is(id1.toString(), id2.toString())
 }
 
@@ -8,9 +10,9 @@ export function isNull(value: any): value is null | undefined {
 
 export class NumericSet implements Iterable<string> {
   private _size = 0
-  private _record: Record<string | number, true> = {}
+  private _record: Record<Numeric, true> = Object.create(null)
 
-  constructor(ids?: Iterable<string | number>) {
+  constructor(ids?: Iterable<Numeric>) {
     if (!ids) {
       return
     }
@@ -22,15 +24,15 @@ export class NumericSet implements Iterable<string> {
   }
 
   clear() {
-    this._record = {}
+    this._record = Object.create(null)
     this._size = 0
   }
 
-  has(id: string | number): boolean {
+  has(id: Numeric): boolean {
     return !!this._record[id]
   }
 
-  remove(id: string | number): boolean {
+  remove(id: Numeric): boolean {
     if (this._record[id]) {
       delete this._record[id]
       this._size--
@@ -39,7 +41,7 @@ export class NumericSet implements Iterable<string> {
     return false
   }
 
-  add(id: string | number): this {
+  add(id: Numeric): this {
     if (!this._record[id]) {
       this._record[id] = true
       this._size++
@@ -51,8 +53,10 @@ export class NumericSet implements Iterable<string> {
     return this._size
   }
 
-  [Symbol.iterator](): IterableIterator<string> {
-    return Object.keys(this._record).values()
+  * [Symbol.iterator](): IterableIterator<string> {
+    for (const id in this._record) {
+      yield id
+    }
   }
 
   static split(str?: string, sep = ',') {

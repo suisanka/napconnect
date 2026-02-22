@@ -11,7 +11,8 @@
     "paths": {
       "@/*": ["src/*"],
       "napcon": ["src/index.ts"],
-      "napcon/utils": ["src/utils/index.ts"]
+      "napcon/utils": ["src/utils/index.ts"],
+      "napcon/utils/builder": ["src/utils/builder.ts"]
     },
     "allowImportingTsExtensions": true,
     "allowJs": true,

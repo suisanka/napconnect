@@ -1,6 +1,6 @@
-import type { ConnectionEventHandlers, ProtocolEventHandlers } from '@/types'
+import type { ConnectionBasicPubSubHandlers, ConnectionEventHandler, ProtocolEventHandlers } from '@/types'
 
-export type ConnectionOrProtocolEventHandlers = ConnectionEventHandlers & ProtocolEventHandlers & {}
+export type ConnectionOrProtocolEventHandlers = ConnectionBasicPubSubHandlers & ProtocolEventHandlers & {}
 
 export function defineHandler<const K extends keyof ConnectionOrProtocolEventHandlers>(
   type: K,
@@ -101,7 +101,7 @@ function createMatcher(type: keyof ProtocolEventHandlers): (event: any) => boole
 export function matchEvent<const K extends keyof ProtocolEventHandlers>(
   type: K,
   handler: (...args: ProtocolEventHandlers[K]) => void,
-) {
+): ConnectionEventHandler {
   const matcher = createMatcher(type)
   return defineHandler('connection.event', (event: any, connection) => {
     if (matcher(event)) {
@@ -122,4 +122,13 @@ export function createEventMatcher<const K extends keyof ProtocolEventHandlers>(
   type: K,
 ): EventMatcher<K> {
   return createMatcher(type) as EventMatcher<K>
+}
+
+export function composeEvent(...handlers: ConnectionEventHandler[]): ConnectionEventHandler {
+  const p = Promise.resolve()
+  return (event, connection) => {
+    for (const handler of handlers) {
+      p.then(() => handler(event, connection))
+    }
+  }
 }

@@ -1,4 +1,6 @@
+export * as t from './builder'
 export * from './event'
-export * from './message'
 export * from './methods'
+export * from './segment'
+export * from './template'
 export * from './value'

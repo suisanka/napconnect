@@ -4,7 +4,7 @@ import type { ProtocolReadableStream, ProtocolReply, ProtocolRequest, ProtocolSt
 import type { PubSubOff } from '@/types/pubsub'
 import type { Transport } from '@/types/transport'
 
-export interface ConnectionBasicEventHandlers {
+export interface ConnectionBasicPubSubHandlers {
   'connection.connected': [transport: Transport, connection: Connection]
   'connection.disconnected': [transport: Transport, connection: Connection]
   'connection.reconnect': [transport: Transport, connection: Connection]
@@ -13,12 +13,11 @@ export interface ConnectionBasicEventHandlers {
   'connection.event': [event: ProtocolEvent, connection: Connection]
   'connection.error': [error: any, connection: Connection]
   'connection.reply.stream': [data: ProtocolReply, connection: Connection]
+  [x: string]: any[]
 }
 
-export type ConnectionEventHandlers = Omit<ConnectionBasicEventHandlers, never>
-
-export type ConnectionPubSub = PubSubOff<ConnectionEventHandlers>
-
+export type ConnectionEventHandler = (event: ProtocolEvent, connection: Connection) => void
+export type ConnectionPubSub = PubSubOff<ConnectionBasicPubSubHandlers>
 export type ConnectionStreamResult<R = any> = [stream: ProtocolReadableStream, result: Promise<ProtocolStreamCompleteMessage<R>>]
 
 export interface Connection extends ConnectionPubSub {
@@ -29,14 +28,17 @@ export interface Connection extends ConnectionPubSub {
     & (<const P, const R = any>(method: string, args: P, stream: true) => Promise<ConnectionStreamResult<R>>)
 }
 
+export type TransportFactory = (token?: string) => MaybePromiseLike<Transport>
+
 export interface OpenConnectionOptions {
-  transport: (token: string) => MaybePromiseLike<Transport>
+  transport: TransportFactory
   token?: string
   timeout?: number
-  reconnect: false | {
+  reconnect?: false | {
     interval: number
     attempts: 'always' | number
   }
 }
 
-export type OpenConnection = (options: OpenConnectionOptions) => Connection
+export type OpenConnection = ((options: OpenConnectionOptions) => Connection)
+  & ((transport: TransportFactory, token?: string) => Connection)
