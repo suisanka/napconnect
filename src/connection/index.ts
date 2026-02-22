@@ -254,7 +254,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionBasicPubSubHandlers> im
 
     // Handle Event
     if (data.post_type) {
-      this.emit('connection.event', data, this)
+      this.emit('protocol.event', data, this)
     }
   }
 
@@ -287,6 +287,10 @@ export class ConnectionImpl extends PubSubImpl<ConnectionBasicPubSubHandlers> im
     this._manualClose = true
     this._disposeTransportEvents?.()
     this._transport?.close()
+  }
+
+  [Symbol.dispose]() {
+    this.close()
   }
 }
 

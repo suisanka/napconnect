@@ -57,7 +57,7 @@ const handleGroupMessage = defineHandler(
 )
 
 connection.on(
-  'connection.event',
+  'protocol.event',
   matchEvent('message.group', handleGroupMessage),
 )
 
@@ -69,7 +69,7 @@ connection.on('connection.disconnected', () => {
   console.log('Disconnected')
 })
 
-connection.on('connection.event', (event) => {
+connection.on('protocol.event', (event) => {
   console.log('Event', event)
 })
 

@@ -1,25 +1,27 @@
-import type { ConnectionBasicPubSubHandlers, ConnectionEventHandler, ProtocolEventHandlers } from '@/types'
+import type { ConnectionBasicPubSubHandlers, ProtocolEventHandler, ProtocolEventHandlers } from '@/types'
 
 export type ConnectionOrProtocolEventHandlers = ConnectionBasicPubSubHandlers & ProtocolEventHandlers & {}
 
-export function defineHandler<const K extends keyof ConnectionOrProtocolEventHandlers>(
+export function defineHandler<const K extends keyof ConnectionOrProtocolEventHandlers, const F extends (...args: ConnectionOrProtocolEventHandlers[K]) => void>(
   type: K,
-  handler: (...args: ConnectionOrProtocolEventHandlers[K]) => void,
-): (...args: ConnectionOrProtocolEventHandlers[K]) => void {
+  handler: F,
+): F {
   return handler
 }
 
 const cachedMatchers = new Map<string, (event: any) => boolean>()
 
-function createMatcher(type: keyof ProtocolEventHandlers): (event: any) => boolean {
+export function createEventMatcher<const K extends keyof ProtocolEventHandlers>(
+  type: K,
+): EventMatcher<K> {
   if (cachedMatchers.has(type)) {
-    return cachedMatchers.get(type)!
+    return cachedMatchers.get(type) as any
   }
 
   if (type === 'message.sent') {
     const matcher = (event: any) => event.post_type === 'message_sent'
     cachedMatchers.set(type, matcher)
-    return matcher
+    return matcher as EventMatcher<K>
   }
 
   let [typeA, typeB, typeC, typeD] = type.split('.')
@@ -95,15 +97,15 @@ function createMatcher(type: keyof ProtocolEventHandlers): (event: any) => boole
   }
 
   cachedMatchers.set(type, matcher)
-  return matcher
+  return matcher as EventMatcher<K>
 }
 
 export function matchEvent<const K extends keyof ProtocolEventHandlers>(
   type: K,
   handler: (...args: ProtocolEventHandlers[K]) => void,
-): ConnectionEventHandler {
-  const matcher = createMatcher(type)
-  return defineHandler('connection.event', (event: any, connection) => {
+): ProtocolEventHandler {
+  const matcher = createEventMatcher(type)
+  return defineHandler('protocol.event', (event: any, connection) => {
     if (matcher(event)) {
       (handler as any)(event, connection)
     }
@@ -116,19 +118,4 @@ export interface EventMatcher<
   K extends keyof ProtocolEventHandlers,
 > {
   (event: any): event is ProtocolEventHandlers[K]
-}
-
-export function createEventMatcher<const K extends keyof ProtocolEventHandlers>(
-  type: K,
-): EventMatcher<K> {
-  return createMatcher(type) as EventMatcher<K>
-}
-
-export function composeEvent(...handlers: ConnectionEventHandler[]): ConnectionEventHandler {
-  const p = Promise.resolve()
-  return (event, connection) => {
-    for (const handler of handlers) {
-      p.then(() => handler(event, connection))
-    }
-  }
 }

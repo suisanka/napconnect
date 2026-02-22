@@ -10,17 +10,17 @@ export interface ConnectionBasicPubSubHandlers {
   'connection.reconnect': [transport: Transport, connection: Connection]
   'connection.request': [event: ProtocolRequest, connection: Connection]
   'connection.reply': [event: ProtocolReply, connection: Connection]
-  'connection.event': [event: ProtocolEvent, connection: Connection]
+  'protocol.event': [event: ProtocolEvent, connection: Connection]
   'connection.error': [error: any, connection: Connection]
   'connection.reply.stream': [data: ProtocolReply, connection: Connection]
   [x: string]: any[]
 }
 
-export type ConnectionEventHandler = (event: ProtocolEvent, connection: Connection) => void
+export type ProtocolEventHandler = (event: ProtocolEvent, connection: Connection) => void
 export type ConnectionPubSub = PubSubOff<ConnectionBasicPubSubHandlers>
 export type ConnectionStreamResult<R = any> = [stream: ProtocolReadableStream, result: Promise<ProtocolStreamCompleteMessage<R>>]
 
-export interface Connection extends ConnectionPubSub {
+export interface Connection extends ConnectionPubSub, Disposable {
   readonly transport: Transport
   connect: () => Promise<void>
   close: () => void

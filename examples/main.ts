@@ -7,12 +7,12 @@ import {
   sendRequest,
 } from 'napcon/utils'
 
-const connection = open(
+using connection = open(
   () => new WebSocket(import.meta.env.NAPCAT_URL!),
 )
 
 connection.on(
-  'connection.event',
+  'protocol.event',
   matchEvent('message.group', async (message) => {
     const segment = findMessageSegment(
       'at',
