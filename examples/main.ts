@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { open } from 'napconnect'
+import { open } from 'napcon'
 import {
   defineHandler,
   findMessageSegment,
@@ -8,7 +8,7 @@ import {
   NumericSet,
   sendRequest,
   sendRequestStream,
-} from 'napconnect/utils'
+} from 'napcon/utils'
 
 const allowlist = NumericSet.split(import.meta.env.GROUP_ALLOWLIST)
 

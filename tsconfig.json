@@ -10,8 +10,8 @@
 
     "paths": {
       "@/*": ["src/*"],
-      "napconnect": ["src/index.ts"],
-      "napconnect/utils": ["src/utils/index.ts"]
+      "napcon": ["src/index.ts"],
+      "napcon/utils": ["src/utils/index.ts"]
     },
     "allowImportingTsExtensions": true,
     "allowJs": true,
