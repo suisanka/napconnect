@@ -1,4 +1,5 @@
-import type { ProtocolMessageEvent } from './event'
+import type { MaybeArray } from '@/types/common'
+import type { ProtocolMessageEvent } from '@/types/event'
 
 export type ProtocolMessageSegment = ProtocolMessageRecvSegment | ProtocolMessageSendSegment
 
@@ -343,3 +344,5 @@ export interface ProtocolMessageFlashTransferSegment {
     fileSetId: string
   }
 }
+
+export type ProtocolSendableMessage = MaybeArray<string | ProtocolMessageSendSegment>

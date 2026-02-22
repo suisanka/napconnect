@@ -1,10 +1,9 @@
 #!/usr/bin/env bun
 import { open } from 'napcon'
 import {
-  findMessageSegment,
-  isSameNumericId,
+  hasMention,
   matchEvent,
-  sendRequest,
+  respond,
 } from 'napcon/utils'
 
 using connection = open(
@@ -14,20 +13,11 @@ using connection = open(
 connection.on(
   'protocol.event',
   matchEvent('message.group', async (message) => {
-    const segment = findMessageSegment(
-      'at',
-      message.message,
-      segment => isSameNumericId(segment.data.qq, message.self_id),
-    )
-
-    if (!segment) {
+    if (!hasMention(message)) {
       return
     }
 
-    await sendRequest(connection, 'send_msg', {
-      group_id: message.group_id,
-      message: `Hello, ${message.sender.nickname}!`,
-    })
+    respond(connection, message, `Hello, ${message.sender.nickname}!`)
   }),
 )
 

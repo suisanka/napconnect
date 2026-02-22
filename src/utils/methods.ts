@@ -1,18 +1,18 @@
 import type { Connection, ConnectionStreamResult } from '@/types'
-import type { ProtocolMessageSendSegment } from '@/types/message'
+import type { ProtocolMessageSendSegment, ProtocolSendableMessage } from '@/types/message'
 import type { ProtocolReplyOk } from '@/types/protocol'
 
 export interface ClientMethods {
   send_private_msg: (params: {
     user_id: number | string
-    message: string | ProtocolMessageSendSegment | (string | ProtocolMessageSendSegment)[]
+    message: ProtocolSendableMessage
     group_id?: number | string
     auto_escape?: boolean
   }) => Promise<ProtocolReplyOk<{ message_id: number }>>
 
   send_group_msg: (params: {
     group_id: number | string
-    message: string | ProtocolMessageSendSegment | (string | ProtocolMessageSendSegment)[]
+    message: ProtocolSendableMessage
     auto_escape?: boolean
   }) => Promise<ProtocolReplyOk<{ message_id: number }>>
 
@@ -20,7 +20,7 @@ export interface ClientMethods {
     message_type?: 'private' | 'group'
     user_id?: number | string
     group_id?: number | string
-    message: string | ProtocolMessageSendSegment | (string | ProtocolMessageSendSegment)[]
+    message: ProtocolSendableMessage
     auto_escape?: boolean
   }) => Promise<ProtocolReplyOk<{ message_id: number }>>
 
@@ -1088,11 +1088,6 @@ export function sendRequest<const T extends keyof ClientMethods>(
   method: T,
   ...params: Parameters<ClientMethods[T]>
 ): ReturnType<ClientMethods[T]>
-export function sendRequest(
-  conn: Connection,
-  method: string,
-  ...params: any[]
-): Promise<ProtocolReplyOk<any>>
 export function sendRequest(
   conn: Connection,
   method: string,

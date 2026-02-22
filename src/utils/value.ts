@@ -66,3 +66,7 @@ export class NumericSet implements Iterable<string> {
 
 // eslint-disable-next-line antfu/top-level-function
 export const noop = () => { /* noop */ }
+
+export function toArray<const T>(value: T | T[]): T[] {
+  return Array.isArray(value) ? value : [value]
+}
