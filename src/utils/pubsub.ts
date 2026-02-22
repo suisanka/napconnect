@@ -4,7 +4,7 @@ import { noop } from './value'
 export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>> implements PubSubOff<T> {
   private readonly listeners = new Map<keyof T, Set<(...args: any[]) => any>>()
 
-  constructor(private onerror?: (error: Error) => void, private _uncaughtEvents?: (keyof T)[]) {
+  constructor(private onerror?: (error: Error) => void, private _uncaughtEvents?: Set<keyof T>) {
     this.onerror = onerror
   }
 
@@ -64,7 +64,7 @@ export class PubSubImpl<T extends Record<string, any[]> = Record<string, any[]>>
       const p = Promise.resolve()
       for (const listener of listeners) {
         p.then(() => listener(...args))
-          .catch(this._uncaughtEvents?.includes(type) ? null : this.onerror)
+          .catch(this._uncaughtEvents?.has(type) ? null : this.onerror)
       }
     }
   }

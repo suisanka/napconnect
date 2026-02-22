@@ -4,7 +4,8 @@ import type { ProtocolReadableStream, ProtocolReply, ProtocolRequest, ProtocolSt
 import type { PubSubOff } from '@/types/pubsub'
 import type { Transport } from '@/types/transport'
 
-export interface ConnectionBasicPubSubHandlers {
+// eslint-disable-next-line ts/consistent-type-definitions
+export type ConnectionBasicPubSubHandlers = {
   'connection.connected': [transport: Transport, connection: Connection]
   'connection.disconnected': [transport: Transport, connection: Connection]
   'connection.reconnect': [transport: Transport, connection: Connection]
@@ -13,7 +14,6 @@ export interface ConnectionBasicPubSubHandlers {
   'protocol.event': [event: ProtocolEvent, connection: Connection]
   'connection.error': [error: any, connection: Connection]
   'connection.reply.stream': [data: ProtocolReply, connection: Connection]
-  [x: string]: any[]
 }
 
 export type ProtocolEventHandler = (event: ProtocolEvent, connection: Connection) => void

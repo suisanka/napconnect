@@ -15,7 +15,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionBasicPubSubHandlers> im
   private _streams = new Map<string, { enqueue: (data: any) => void, raise: (err: any) => void, complete: (value: any) => void, close: () => void }>()
 
   constructor(private readonly _options: OpenConnectionOptions) {
-    super(err => this._handleError(err), ['connection.error'])
+    super(err => this._handleError(err), new Set(['connection.error']))
   }
 
   get transport(): Transport {

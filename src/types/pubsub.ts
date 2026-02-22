@@ -1,6 +1,6 @@
 import type { Dispose } from '@/types/common'
 
-export interface SubHalf<T extends Record<string, any[]>> {
+export interface SubHalf<T extends Record<string, any>> {
   // eslint-disable-next-line ts/method-signature-style
   on<const K extends keyof T>(
     type: K,
