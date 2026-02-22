@@ -13,5 +13,7 @@ A lightweight TypeScript library for [NapCat](https://github.com/NapNeko/NapCatQ
 - **Rich Utilities**: Built-in message builders, guards, and helper functions.
 
 ## Example
+This is a simple example of using NapCon to respond to group at messages with `Hello, [nickname]!`.
+![Example](misc/example.svg)
 
-Check out [examples/main.ts](https://github.com/suisanka/napcon/blob/main/examples/main.ts) for usage examples.
+Check out [examples](https://github.com/suisanka/napcon/blob/main/examples/) for usage examples.
