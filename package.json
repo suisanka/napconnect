@@ -1,13 +1,23 @@
 {
-  "name": "napconnect",
+  "name": "napcon",
   "type": "module",
   "version": "0.0.9",
   "packageManager": "bun@1.3.9",
-  "description": "A TypeScript library for NapCat",
+  "description": "Lightweight NapCat/Onebot v11 TypeScript library",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/suisanka/napconnect.git"
+    "url": "git+https://github.com/suisanka/napcon.git"
   },
+  "keywords": [
+    "onebot",
+    "napcat",
+    "sdk",
+    "qq",
+    "qq-robot",
+    "typescript",
+    "onebot11",
+    "cqhttp"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",

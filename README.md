@@ -1,13 +1,16 @@
-# NapConnect
+# NapCon
 
-Low-level TypeScript library for [NapCat](https://github.com/NapNeko/NapCatQQ).
+A lightweight TypeScript library for [NapCat](https://github.com/NapNeko/NapCatQQ) and [OneBot v11](https://11.onebot.dev).
 
-> Warning: This library is still in development, and the API may change.
+> **Note**: This library is currently in active development. APIs are subject to change.
 
 ## Features
-- Better TypeScript support
-- Async API
-- Stream support
+
+- **Ultra-lightweight**: Zero dependencies, ~1.7KB gzipped.
+- **Simple API**: Connect to the server with a single `open(...)` method.
+- **TypeScript First**: Comprehensive type definitions for events and methods.
+- **Rich Utilities**: Built-in message builders, guards, and helper functions.
 
 ## Example
-See [examples/main.ts](https://github.com/suisanka/napconnect/blob/main/examples/main.ts)
+
+Check out [examples/main.ts](https://github.com/suisanka/napcon/blob/main/examples/main.ts) for usage examples.
