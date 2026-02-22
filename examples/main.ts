@@ -14,13 +14,11 @@ const connection = open(
 connection.on(
   'connection.event',
   matchEvent('message.group', async (message) => {
-    const segment = findMessageSegment(
+    if (!findMessageSegment(
       'at',
       message.message,
       segment => isSameNumericId(segment.data.qq, message.self_id),
-    )
-
-    if (segment == null) {
+    )) {
       return
     }
 
