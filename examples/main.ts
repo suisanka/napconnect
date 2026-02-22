@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { open } from 'napconnect'
 import {
   defineHandler,
@@ -9,28 +10,18 @@ import {
   sendRequestStream,
 } from 'napconnect/utils'
 
+const allowlist = NumericSet.split(import.meta.env.GROUP_ALLOWLIST)
+
 const connection = open({
-  transport: token => new WebSocket(`${import.meta.env.NAPCAT_ENDPOINT}/?access_token=${token}`),
+  transport: token => new WebSocket(
+    `${import.meta.env.NAPCAT_ENDPOINT}/?access_token=${token}`,
+  ),
   token: import.meta.env.NAPCAT_TOKEN,
   reconnect: {
     interval: 3000,
     attempts: 15,
   },
 })
-
-connection.on('connection.connected', () => {
-  console.log('Connected')
-})
-
-connection.on('connection.disconnected', () => {
-  console.log('Disconnected')
-})
-
-connection.on('connection.event', (event) => {
-  console.log('Event', event)
-})
-
-const allowlist = NumericSet.split(import.meta.env.GROUP_ALLOWLIST)
 
 const handleGroupMessage = defineHandler(
   'message.group',
@@ -40,7 +31,9 @@ const handleGroupMessage = defineHandler(
     }
 
     const segment = findMessageSegment('at', message.message)
-    if (!segment || !isSameNumericId(segment.data.qq, message.self_id)) {
+    if (
+      segment == null || !isSameNumericId(segment.data.qq, message.self_id)
+    ) {
       return
     }
 
@@ -50,7 +43,10 @@ const handleGroupMessage = defineHandler(
       message: 'Hello from napconnect',
     })
 
-    const [stream, res] = await sendRequestStream(connection, 'test_download_stream', {})
+    const [stream, res] = await sendRequestStream(
+      connection,
+      'test_download_stream',
+    )
 
     console.log('Stream start:', stream, res)
 
@@ -70,5 +66,17 @@ connection.on(
   'connection.event',
   matchEvent('message.group', handleGroupMessage),
 )
+
+connection.on('connection.connected', () => {
+  console.log('Connected')
+})
+
+connection.on('connection.disconnected', () => {
+  console.log('Disconnected')
+})
+
+connection.on('connection.event', (event) => {
+  console.log('Event', event)
+})
 
 await connection.connect()

@@ -110,6 +110,8 @@ export function matchEvent<const K extends keyof ProtocolEventHandlers>(
   })
 }
 
+export { matchEvent as when }
+
 export interface EventMatcher<
   K extends keyof ProtocolEventHandlers,
 > {
