@@ -1,9 +1,9 @@
 # NapCon
-> Moved to [`napcon`](https://npmjs.com/napcon)
-
 A lightweight TypeScript library for [NapCat](https://github.com/NapNeko/NapCatQQ) and [OneBot v11](https://11.onebot.dev).
 
 > **Note**: This library is currently in active development. APIs are subject to change.
+
+Check out [DeepWiki](https://deepwiki.com/suisanka/napcon) for more documentation.
 
 ## Features
 
