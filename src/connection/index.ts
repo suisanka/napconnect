@@ -2,7 +2,6 @@ import type { Dispose } from '@/types/common'
 import type { Connection, ConnectionEventHandlers, OpenConnectionOptions } from '@/types/connection'
 import type { ProtocolReadableStream, ProtocolReplyStream, ProtocolRequest, ProtocolStreamCompleteMessage } from '@/types/protocol'
 import type { Transport } from '@/types/transport'
-import { nanoid } from 'nanoid'
 import { PubSubImpl } from '@/utils/pubsub'
 
 export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implements Connection {
@@ -84,7 +83,7 @@ export class ConnectionImpl extends PubSubImpl<ConnectionEventHandlers> implemen
   request<const P, R = any>(method: string, args: P, stream: true): Promise<[ProtocolReadableStream, Promise<ProtocolStreamCompleteMessage<R>>]>
   request<P, R = any>(method: string, args?: P, stream?: boolean): Promise<R> | Promise<[ProtocolReadableStream, Promise<ProtocolStreamCompleteMessage<R>>]> {
     return new Promise<any>((resolve, reject) => {
-      const echo = nanoid()
+      const echo = crypto.randomUUID()
       const request: ProtocolRequest = {
         action: method,
         params: args,

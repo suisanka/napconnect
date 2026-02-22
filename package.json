@@ -21,6 +21,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com"
+  },
   "scripts": {
     "format": "eslint --fix .",
     "build": "tsdown",
@@ -29,9 +33,6 @@
   "peerDependencies": {
     "typescript": "^5.9.3"
   },
-  "dependencies": {
-    "nanoid": "^5.1.6"
-  },
   "devDependencies": {
     "@antfu/eslint-config": "^7.4.3",
     "@types/bun": "latest",
@@ -39,9 +40,5 @@
     "eslint": "^10.0.0",
     "jiti": "^2.6.1",
     "tsdown": "^0.20.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com"
   }
 }
